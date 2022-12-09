@@ -1,15 +1,19 @@
-# chat-example
+# Hlásič
 
-This is the source code for a very simple chat example used for
-the [Getting Started](http://socket.io/get-started/chat/) guide
-of the Socket.IO website.
+##Projekt do školy :)
 
-Please refer to it to learn how to run this application.
+Pro nainstalování je nutné mít [node.js](https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions) (možná to ubuntu má už naistalované, ale nevím, jestli to bude s tou verzí fungovat, kdyžtak [návod](https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-22-04)) a npm (instaluje se společně s node.js)
 
-You can also spin up a free Heroku dyno to test it out:
+Vyzkoušení verzí `node -v` a `npm -v`
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/socketio/chat-example)
+ve složce s `package.json` pustit příkaz `npm install`
 
-Or run it on [Repl.it](https://repl.it/):
+a zapnutí ve složce s `package.json` pustit příkaz `npm run start`
 
-[![Run on Repl.it](https://repl.it/badge/github/socketio/chat-example)](https://repl.it/github/socketio/chat-example)
+a zapnutí ve složce s `package.json` pustit příkaz `npm run start`
+
+bude potřeba, aby se tento příkaz spustil při každém startu
+
+server v základu běží na portu 8080
+
+administrace na url `/admin` a přihlašovací údaje jsou `admin` s heslem `Admin123`

@@ -2,47 +2,178 @@
 <html>
   <head>
     <title>Socket.IO chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
+
     <style>
-      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      * {
+        font-family: 'Roboto', sans-serif;
+      }
+      body, html {
+        margin: 0;
+        padding: 0;
+      }
 
-      #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-      #input:focus { outline: none; }
-      #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+      .join {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 100vw;
+        background-color: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
 
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages > li { padding: 0.5rem 1rem; }
-      #messages > li:nth-child(odd) { background: #efefef; }
+        z-index: 20;
+      }
+
+      .join form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      input {
+        margin-bottom: 6px;
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 4px;
+      }
+
+      button {
+        width: 180px;
+        border-radius: 4px;
+        padding: 12px 20px;
+        border: none;
+        border: gray 2px solid;
+      }
+
+      button:not([disabled]) {
+        border: none;
+        background-color: #04AA6D;
+        color: white;
+        cursor: pointer;
+      }
+
+      button:not([disabled]):hover {
+        background-color: #45a049;
+        color: white;
+        cursor: pointer;
+      }
+
+      .raise {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 100vw;
+        background-color: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+      }
+
+      button {
+        transition-duration: 0.4s;
+      }
     </style>
   </head>
   <body>
-    <ul id="messages"></ul>
-    <form id="form" action="">
-      <input id="input" autocomplete="off" /><button>Send</button>
-    </form>
+    <article class="join" id="join">
+      <form id="join-form">
+        <input type="text" placeholder="Jméno" id="join-name">
+        <button disabled id="join-button">Připojit</button>
+      </form>
+      <p id="is-close">Session není otevřena</p>
+    </article>
+    <article class="raise">
+        <p id="count"></p>
+        <button id="raise-button" disabled>Zvednout ruku</button>
+        
+    </article>
     <script src="/socket.io/socket.io.js"></script>
 
     <script>
       var socket = io();
+      var open = false;
+      var joinForm = document.getElementById('join-form');
+      setTimeout(() => {
+        fetch('/open')
+        .then((response) => response.json())
+        .then((isOpen) => {
+          if(isOpen) {
+            open = true
+            joinButton.disabled = false;
+            isClose.style.visibility = "hidden";
+          } else {
+            open = false
+            joinButton.disabled = true;
+            isClose.style.visibility = "visible";
+          }
+        });
+      }, "300")
 
-      var messages = document.getElementById('messages');
-      var form = document.getElementById('form');
-      var input = document.getElementById('input');
 
-      form.addEventListener('submit', function(e) {
+      joinForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        if (input.value) {
-          socket.emit('chat message', input.value);
-          input.value = '';
+        var joinName = document.getElementById('join-name').value;
+        if(!joinName) return
+        if(!open) return
+
+        if(joinName) {
+          socket.emit('join', {name: joinName});
         }
+        document.getElementById('join').style.display = "none";
       });
 
-      socket.on('chat message', function(msg) {
-        var item = document.createElement('li');
-        item.textContent = msg;
-        messages.appendChild(item);
-        window.scrollTo(0, document.body.scrollHeight);
+      var raiseButton = document.getElementById('raise-button');
+      var joinButton = document.getElementById('join-button')
+      var isClose = document.getElementById('is-close')
+      raiseButton.addEventListener('click', function(e) {
+        socket.emit('raise', {id: socket.id});
       });
+
+      socket.on('data', function(socketData) {
+        console.log(socketData)
+
+        if(socketData.open) {
+          joinButton.disabled = false
+          open = true
+          isClose.style.visibility = "hidden";
+        } else {
+          open = true
+          joinButton.disabled = true
+          isClose.style.visibility = "visible";
+        }
+
+        let index = socketData.members.findIndex(element => element.id === socket.id)
+        if(index != -1 && socketData.started && socketData.members[index].raised == false) {
+          raiseButton.disabled = false
+        } else {
+          raiseButton.disabled = true
+        }
+
+        document.getElementById('count').innerHTML = "Počet přihlášených je: " + socketData.members.length;
+      });
+
+      socket.on('reseted', function(socketData) {
+        location.reload();  
+      });
+
     </script>
   </body>
 </html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
+
+    <style>
+      * {
+        font-family: 'Roboto', sans-serif;
+      }
+      
+      body, html {
+        margin: 0;
+        padding: 0;
+      }
+
+      .join {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 100vw;
+        background-color: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        z-index: 20;
+      }
+
+      .join form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      input {
+        margin-bottom: 6px;
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 4px;
+      }
+
+      button {
+        width: 180px;
+        border-radius: 4px;
+        padding: 12px 20px;
+        border: none;
+        border: gray 2px solid;
+      }
+
+      button:not([disabled]) {
+        border: none;
+        background-color: #04AA6D;
+        color: white;
+        cursor: pointer;
+      }
+
+      button:not([disabled]):hover {
+        background-color: #45a049;
+        color: white;
+        cursor: pointer;
+      }
+
+      .raise {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 100vw;
+        background-color: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+      }
+
+      .buttons {
+        display: flex;
+      }
+
+      .buttons button {
+        margin: 5px;
+        width: 100px;
+      }
+
+      button {
+        transition-duration: 0.4s;
+      }
+
+      .buttons button.close,
+      .buttons button.stop,
+      .buttons button.clear,
+      .buttons button.reset {
+        background-color: rgb(211, 24, 24);
+      }
+
+      .buttons button.close:hover
+      .buttons button.stop:hover,
+      .buttons button.clear:hover,
+      .buttons button.reset:hover {
+        background-color: rgb(204, 53, 53);
+      }
+
+      #members-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      #members-list li {
+        margin-top: 6px;
+        background-color: rgb(240, 214, 214);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 18px;
+        text-align: center;
+      }
+
+      #members-list li.raised {
+        background-color: #45a049;
+        color: white;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <article class="join" id="join">
+      <form id="join-form">
+        <input type="text" placeholder="Jméno" id="join-name"><br>
+        <input type="password" placeholder="Heslo" id="join-pass"><br>
+        <button>Připojit</button>
+      </form>
+    </article>
+    <article class="raise">
+      <p id="count"></p>
+      <div class="buttons">
+        <button id="open-close-btn" class="open">Open</button>
+        <button id="start-stop-btn" class="start">Start</button>
+        <button id="clear-btn" class="clear">Clear</button>
+        <button id="reset-btn" class="reset">Reset</button>
+      </div>
+      
+      <p id="time-holder">Čas: 0</p>
+      <p>Připojeni:</p>
+        <ul id="members-list">
+
+        </ul>
+    </article>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      var socket = io();
+
+      var joinForm = document.getElementById('join-form');
+      joinForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var joinName = document.getElementById('join-name').value;
+        var joinPass = document.getElementById('join-pass').value;
+        if(joinName) {
+          socket.emit('join-admin', {name: joinName, joinPass});
+        }
+      });
+
+      socket.on('join-admin', function(socketData) {
+        console.log(socketData)
+        if(socketData.success === true) {
+          document.getElementById('join').style.display = "none";
+          localStorage.setItem('token', socketData.token);
+        } else {
+
+        }
+      });
+
+      function getToken() {
+        let token = localStorage.getItem('token');
+        if(token) {
+          return token
+        } else {
+          document.getElementById('join').style.display = "block";
+          return
+        } 
+      }
+
+      let openCloseBtn = document.getElementById('open-close-btn');
+      var openCloseState = 0 
+      openCloseBtn.addEventListener('click', function(e) {
+        if(openCloseState) {  
+          openCloseState = 0
+          openCloseBtn.innerHTML = "Open"
+          socket.emit('admin-close', getToken());
+        } else {
+          openCloseState = 1
+          openCloseBtn.innerHTML = "Close"
+          socket.emit('admin-open', getToken());
+        }
+      });
+
+
+      let startStopBtn = document.getElementById('start-stop-btn');
+      var startStopState = 0 
+      startStopBtn.addEventListener('click', function(e) {
+        
+        if(startStopState) {
+          startStopState = 0
+          startStopBtn.innerHTML = "Start"
+          socket.emit('admin-stop', getToken());
+        } else {
+          startStopState = 1
+          startStopBtn.innerHTML = "Stop"
+          socket.emit('admin-start', getToken());
+        }
+      });
+
+      let clearBtn = document.getElementById('clear-btn');
+      clearBtn.addEventListener('click', function(e) {
+          socket.emit('admin-clear', getToken());
+      });
+
+      let resetBtn = document.getElementById('reset-btn');
+      resetBtn.addEventListener('click', function(e) {
+        socket.emit('admin-reset', getToken());
+      });
+
+
+      socket.on('data', function(socketData) {
+        console.log(socketData)
+        if(socketData.open) {
+          openCloseState = 1
+          openCloseBtn.innerHTML = "Close"
+          openCloseBtn.classList.remove("open")
+          openCloseBtn.classList.add("close")
+        } else {
+          openCloseState = 0
+          openCloseBtn.innerHTML = "Open"
+          openCloseBtn.classList.remove("close")
+          openCloseBtn.classList.add("open")
+        }
+
+        if(socketData.started) {
+          startStopState = 1
+          startStopBtn.innerHTML = "Stop"
+          startStopBtn.classList.remove("start")
+          startStopBtn.classList.add("stop")
+          conTimer(socketData.started_time)
+        } else {
+          startStopState = 0
+          startStopBtn.innerHTML = "Start"
+          startStopBtn.classList.remove("stop")
+          startStopBtn.classList.add("start")
+          conTimer(0)
+        }
+
+
+        
+        document.getElementById('count').innerHTML = "Počet přihlášených je: " + socketData.members.length;
+        
+        var members_raised = socketData.members.filter(member => member.raised);
+        var members_notraised = socketData.members.filter(member => !member.raised);
+
+        members_raised.sort((a,b) => (a.position - b.position))
+        let list = ""
+        members_raised.forEach(member => list += `<li class="raised">${member.position}. ${member.name} ${(member.time + "").slice(0, -3) + "," + (member.time + "").slice(-3, -2)} s (${member.id.slice(0, 4)})</li>`)
+        members_notraised.forEach(member => list += `<li>${member.name} (${member.id.slice(0, 4)})</li>`)
+        document.getElementById('members-list').innerHTML = list
+      
+      });
+
+
+      var timeHolder = document.getElementById('time-holder')
+      var timer = null
+      function conTimer(time) {
+        clearInterval(timer)
+
+        if(time == 0) {
+          clearInterval(timer)
+          timeHolder.innerHTML = "Čas: 0 s"
+        } else {
+          time = Date.now()-(+time)
+          timer = setInterval(()=>{
+            time = time + 100
+            timeHolder.innerHTML = `Čas: ${(time + "").slice(0, -3) + "," + (time + "").slice(-3, -2)} s`
+          }, 100)
+        }
+      }
+      
+    </script>
+  </body>
+</html>
